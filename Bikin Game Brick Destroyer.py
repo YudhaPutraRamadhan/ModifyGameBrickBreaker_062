@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.messagebox as messagebox
 
 class GameObject(object):
     def __init__(self, canvas, item):
@@ -119,6 +120,7 @@ class Brick(GameObject):
 class Game(tk.Frame):
     def __init__(self, master):
         super(Game, self).__init__(master)
+        self.master = master
         self.lives = 0
         self.score = 0
         self.minimum_win_score = 150
@@ -135,12 +137,7 @@ class Game(tk.Frame):
         self.paddle = Paddle(self.canvas, self.width/2, 326)
         self.items[self.paddle.item] = self.paddle
 
-        for x in range(5, self.width - 5, 75):
-            self.add_brick(x + 37.5, 30, 5)
-            self.add_brick(x + 37.5, 50, 4)
-            self.add_brick(x + 37.5, 70, 3)
-            self.add_brick(x + 37.5, 90, 2)
-            self.add_brick(x + 37.5, 110, 1)
+        self.setup_initial_bricks()
 
         self.hud = None
         self.score_text = None
@@ -152,7 +149,23 @@ class Game(tk.Frame):
         self.canvas.bind('<KeyRelease-Left>', lambda _: self.paddle.stop_move())
         self.canvas.bind('<KeyRelease-Right>', lambda _: self.paddle.stop_move())
 
+    def setup_initial_bricks(self):
+        for x in range(5, self.width - 5, 75):
+            self.add_brick(x + 37.5, 30, 5)
+            self.add_brick(x + 37.5, 50, 4)
+            self.add_brick(x + 37.5, 70, 3)
+            self.add_brick(x + 37.5, 90, 2)
+            self.add_brick(x + 37.5, 110, 1)
+
     def setup_game(self):
+        self.canvas.delete('all')
+        self.items.clear()
+        
+        self.paddle = Paddle(self.canvas, self.width/2, 326)
+        self.items[self.paddle.item] = self.paddle
+        
+        self.setup_initial_bricks()
+        
         self.add_ball()
         self.update_lives_text()
         self.update_score_text()
@@ -206,22 +219,42 @@ class Game(tk.Frame):
         
         num_bricks = len(self.canvas.find_withtag('brick'))
         if num_bricks == 0:
-            if self.score >= self.minimum_win_score:
-                self.ball.speed = None
-                self.draw_text(450, 250, f'Kamu Memenangkan Gamenya Dengan {self.score} Points!')
-            else:
-                self.draw_text(450, 250, f'Tidak Cukup Point! Butuh {self.minimum_win_score} Untuk Memenangkan Gamenya.')
-                self.ball.speed = None
+            self.handle_game_end(win=True)
         elif self.ball.get_position()[3] >= self.height: 
-            self.ball.speed = None
             self.lives -= 1
             if self.lives < 0:
-                self.draw_text(450, 250, f'Permainan Berakhir! Skor Akhir: {self.score}')
+                self.handle_game_end(win=False)
             else:
                 self.after(1000, self.setup_game)
         else:
             self.ball.update()
             self.after(50, self.game_loop)
+
+    def handle_game_end(self, win=False):
+        # Stop the game
+        self.ball.speed = None
+        
+        # Prepare message based on game result
+        if win:
+            if self.score >= self.minimum_win_score:
+                message = f'Selamat! Kamu Memenangkan Game dengan {self.score} Poin!'
+            else:
+                message = f'Tidak Cukup Poin! Butuh {self.minimum_win_score} Untuk Memenangkan Game.'
+        else:
+            message = f'Permainan Berakhir! Skor Akhir: {self.score}'
+        
+        # Ask user if they want to continue
+        result = messagebox.askyesno("Game Berakhir", 
+                                     f"{message}\n\nApakah Anda ingin bermain lagi?")
+        
+        if result:
+            # Reset game state and restart
+            self.lives = 0
+            self.score = 0
+            self.setup_game()
+        else:
+            # Close the window
+            self.master.destroy()
 
     def check_collisions(self):
         ball_coords = self.ball.get_position()
@@ -233,4 +266,4 @@ if __name__ == '__main__':
     root = tk.Tk()
     root.title('Pecahkan Kotaknya!')
     game = Game(root)
-    game.mainloop()
+    root.mainloop()
