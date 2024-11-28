@@ -231,29 +231,24 @@ class Game(tk.Frame):
             self.after(50, self.game_loop)
 
     def handle_game_end(self, win=False):
-        # Stop the game
         self.ball.speed = None
-        
-        # Prepare message based on game result
+      
         if win:
             if self.score >= self.minimum_win_score:
-                message = f'Selamat! Kamu Memenangkan Game dengan {self.score} Poin!'
+                message = f'Selamat! Kamu Memenangkan Game Dengan Jumlah {self.score} Poin!'
             else:
-                message = f'Tidak Cukup Poin! Butuh {self.minimum_win_score} Untuk Memenangkan Game.'
+                message = f'Tidak Cukup Poin! Butuh {self.minimum_win_score} Poin Untuk Memenangkan Game.'
         else:
             message = f'Permainan Berakhir! Skor Akhir: {self.score}'
         
-        # Ask user if they want to continue
         result = messagebox.askyesno("Game Berakhir", 
                                      f"{message}\n\nApakah Anda ingin bermain lagi?")
         
         if result:
-            # Reset game state and restart
             self.lives = 0
             self.score = 0
             self.setup_game()
         else:
-            # Close the window
             self.master.destroy()
 
     def check_collisions(self):
